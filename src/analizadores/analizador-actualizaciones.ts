@@ -5,6 +5,8 @@ import * as semver from 'semver';
 import axios from 'axios';
 import { Dependencias, ActualizacionPaquete } from '../tipos/tipos-proyecto';
 import { esActualizacionSegura } from '../utilidades/version-utilidades';
+import { PackageJson } from '../../tipos/tipos-proyecto';
+import { ejecutarComando } from '../utilidades/ejecutar-comando';
 
 /**
  * Interfaz para la respuesta del registro de npm
@@ -130,4 +132,73 @@ const obtenerCambiosRelevantes = (
   }
   
   return cambios;
+};
+
+/**
+ * Analiza las actualizaciones disponibles para las dependencias de un proyecto
+ * @param dependencias - Dependencias a analizar
+ * @returns Lista de actualizaciones posibles
+ */
+export const analizarActualizaciones = async (dependencias: { [key: string]: string }): Promise<ActualizacionPaquete[]> => {
+  if (!dependencias || Object.keys(dependencias).length === 0) {
+    return [];
+  }
+
+  try {
+    const resultado = await ejecutarComando('npm outdated --json');
+    
+    if (!resultado.exito || !resultado.stdout) {
+      return [];
+    }
+
+    const outdated = JSON.parse(resultado.stdout);
+    const actualizaciones: ActualizacionPaquete[] = [];
+
+    for (const [paquete, info] of Object.entries(outdated)) {
+      if (dependencias[paquete]) {
+        const esSegura = info.wanted === info.latest;
+        const cambios = await obtenerCambiosPaquete(paquete, dependencias[paquete], info.latest);
+        
+        actualizaciones.push({
+          paquete,
+          versionActual: dependencias[paquete],
+          versionDisponible: info.latest,
+          esSegura,
+          cambios
+        });
+      }
+    }
+
+    return actualizaciones;
+  } catch (error) {
+    console.error('Error al analizar actualizaciones:', error);
+    return [];
+  }
+};
+
+/**
+ * Obtiene los cambios entre dos versiones de un paquete
+ * @param paquete - Nombre del paquete
+ * @param versionInicial - Versión inicial
+ * @param versionFinal - Versión final
+ * @returns Lista de cambios entre las versiones
+ */
+const obtenerCambiosPaquete = async (paquete: string, versionInicial: string, versionFinal: string): Promise<string[]> => {
+  try {
+    const resultado = await ejecutarComando(`npm view ${paquete} changelog`);
+    
+    if (!resultado.exito || !resultado.stdout) {
+      return [];
+    }
+
+    const cambios = resultado.stdout
+      .split('\n')
+      .filter(linea => linea.trim() !== '' && linea.includes(versionInicial) || linea.includes(versionFinal))
+      .map(linea => linea.trim());
+
+    return cambios;
+  } catch (error) {
+    console.error(`Error al obtener cambios para ${paquete}:`, error);
+    return [];
+  }
 };

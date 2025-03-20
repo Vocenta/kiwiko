@@ -19,63 +19,67 @@ export type Dependencias = {
 };
 
 /**
- * Representa la estructura de un archivo package.json
+ * Tipos relacionados con proyectos Node.js
  */
-export type PackageJson = {
-  readonly name: string;
-  readonly version: string;
-  readonly description?: string;
-  readonly main?: string;
-  readonly scripts?: Record<string, string>;
-  readonly dependencies?: Dependencias;
-  readonly devDependencies?: Dependencias;
-  readonly peerDependencies?: Dependencias;
-  readonly engines?: {
-    readonly node?: string;
-    readonly npm?: string;
-  };
-};
 
-/**
- * Representa un conflicto entre dependencias
- */
-export type ConflictoDependencia = {
-  readonly paquete: string;
-  readonly versionRequerida: string;
-  readonly versionesConflictivas: Array<{
-    readonly dependencia: string;
-    readonly versionRequerida: string;
+export interface PackageJson {
+  name: string;
+  version: string;
+  description?: string;
+  main?: string;
+  scripts?: { [key: string]: string };
+  dependencies?: { [key: string]: string };
+  devDependencies?: { [key: string]: string };
+  engines?: { node?: string };
+}
+
+export interface ResultadoCompatibilidadNode {
+  esCompatible: boolean;
+  versionRequerida?: string;
+  versionActual: string;
+  recomendacion?: string;
+}
+
+export interface ConflictoDependencia {
+  paquete: string;
+  versionRequerida: string;
+  versionesConflictivas: Array<{
+    dependencia: string;
+    versionRequerida: string;
   }>;
-  readonly solucionRecomendada?: string;
-};
+  solucionRecomendada?: string;
+}
 
-/**
- * Representa una actualización posible para un paquete
- */
-export type ActualizacionPaquete = {
-  readonly paquete: string;
-  readonly versionActual: string;
-  readonly versionDisponible: string;
-  readonly esSegura: boolean;
-  readonly cambios?: string[];
-};
+export interface ActualizacionPosible {
+  paquete: string;
+  versionActual: string;
+  versionDisponible: string;
+  esSegura: boolean;
+  cambios?: string[];
+}
 
-/**
- * Resultado del análisis de compatibilidad de Node.js
- */
-export type ResultadoCompatibilidadNode = {
-  readonly versionRequerida: string;
-  readonly versionActual: string;
-  readonly esCompatible: boolean;
-  readonly recomendacion?: string;
-};
+export interface OptimizacionSugerida {
+  tipo: 'instalacion' | 'performance' | 'seguridad' | 'mantenimiento';
+  descripcion: string;
+  prioridad: 'alta' | 'media' | 'baja';
+  acciones: string[];
+}
 
-/**
- * Resultado completo del análisis de un proyecto
- */
-export type ResultadoAnalisis = {
-  readonly compatibilidadNode: ResultadoCompatibilidadNode;
-  readonly conflictos: ConflictoDependencia[];
-  readonly actualizacionesPosibles: ActualizacionPaquete[];
-  readonly optimizacionesSugeridas: string[];
-};
+export interface ResultadoAnalisis {
+  compatibilidadNode: ResultadoCompatibilidadNode;
+  conflictos: ConflictoDependencia[];
+  actualizacionesPosibles: ActualizacionPosible[];
+  optimizacionesSugeridas: OptimizacionSugerida[];
+}
+
+export interface ResultadoVerificacionVolta {
+  instalado: boolean;
+  version?: string;
+  error?: string;
+}
+
+export interface ResultadoCreacionEntorno {
+  exito: boolean;
+  mensaje: string;
+  error?: string;
+}
